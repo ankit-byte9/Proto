@@ -161,7 +161,7 @@ def list_students():
     return jsonify({"students": students})
 
 
-# ---------------- Seed Teacher ---------------- #
+#  Seed Teacher 
 def seed_teacher():
     conn = sqlite3.connect("attendance.db")
     c = conn.cursor()
@@ -170,8 +170,9 @@ def seed_teacher():
     conn.close()
 
 
-# ---------------- Main ---------------- #
+#  Main 
 if __name__ == "__main__":
     init_db()
     seed_teacher()
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))  # Get PORT from Render
+    app.run(host="0.0.0.0", port=port)
