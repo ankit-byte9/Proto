@@ -11,6 +11,13 @@ CORS(app)
 PERSISTENT_DIR = "/mnt/data"
 TMP_DIR = "/tmp/data"
 
+# Root Route [changed by : Ayush]
+# -->
+@app.route("/", methods=["GET"])
+def home():
+    return jsonify({"success": True, "message": "Server is Running"})
+# ---
+
 def get_data_dir():
     # If persistent disk exists and is writable, use it
     if os.path.exists(PERSISTENT_DIR) and os.access(PERSISTENT_DIR, os.W_OK):
