@@ -6,13 +6,15 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
-# Folder for saving student images
-IMAGE_FOLDER = "student_images"
+# Use Render persistent disk paths
+DATA_DIR = "/mnt/data"
+DB_PATH = os.path.join(DATA_DIR, "attendance.db")
+IMAGE_FOLDER = os.path.join(DATA_DIR, "student_images")
 os.makedirs(IMAGE_FOLDER, exist_ok=True)
 
 # Database Setup 
 def init_db():
-    conn = sqlite3.connect("attendance.db")
+    conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
 
     # Students table
@@ -37,18 +39,18 @@ def init_db():
     conn.commit()
     conn.close()
 
-#  Teacher Verification 
+# Teacher Verification 
 def verify_teacher(username, password):
-    conn = sqlite3.connect("attendance.db")
+    conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute("SELECT id FROM teachers WHERE username=? AND password=?", (username, password))
     result = c.fetchone()
     conn.close()
     return result[0] if result else None
 
-#  Routes 
+# Routes 
 
-# Student Registration (with image storage)
+# Student Registration
 @app.route("/student/register", methods=["POST"])
 def register_student():
     name = request.form.get("name")
@@ -57,12 +59,11 @@ def register_student():
     if not name or not image:
         return jsonify({"success": False, "error": "Name and image required"}), 400
 
-    # Save image to disk
+    # Save image to persistent folder
     image_path = os.path.join(IMAGE_FOLDER, f"{name}_{image.filename}")
     image.save(image_path)
 
-    # Insert into DB
-    conn = sqlite3.connect("attendance.db")
+    conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute("INSERT INTO students (name, image_path) VALUES (?, ?)", (name, image_path))
     conn.commit()
@@ -70,7 +71,7 @@ def register_student():
 
     return jsonify({"success": True, "message": f"Student {name} registered successfully"})
 
-# Teacher login (just verifies credentials)
+# Teacher Login
 @app.route("/teacher/login", methods=["POST"])
 def teacher_login():
     username = request.form.get("username")
@@ -82,16 +83,16 @@ def teacher_login():
 
     return jsonify({"success": True, "message": "Login successful", "teacher_id": teacher_id})
 
-# Teacher marks attendance based on frontend recognition results
+# Mark Attendance
 @app.route("/teacher/attendance", methods=["POST"])
 def mark_attendance():
     data = request.json
-    recognized_students = data.get("recognized_students", [])  # list of {id, confidence}
+    recognized_students = data.get("recognized_students", [])
 
     present_students = []
     unidentifiable_students = []
 
-    conn = sqlite3.connect("attendance.db")
+    conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
 
     for student in recognized_students:
@@ -113,7 +114,7 @@ def mark_attendance():
         "unidentifiable_students": unidentifiable_students
     })
 
-# Teacher can manually mark attendance for unidentifiable students
+# Manual Mark
 @app.route("/teacher/manual_mark", methods=["POST"])
 def manual_mark():
     student_id = request.form.get("student_id")
@@ -124,7 +125,7 @@ def manual_mark():
 
     present_value = 1 if status == "present" else 0
 
-    conn = sqlite3.connect("attendance.db")
+    conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute("UPDATE students SET present=? WHERE id=?", (present_value, student_id))
     conn.commit()
@@ -132,10 +133,10 @@ def manual_mark():
 
     return jsonify({"success": True, "message": f"Student {student_id} marked as {status}"})
 
-# List all students with their status
+# List Students
 @app.route("/students", methods=["GET"])
 def list_students():
-    conn = sqlite3.connect("attendance.db")
+    conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute("SELECT id, name, present FROM students")
     rows = c.fetchall()
@@ -147,17 +148,18 @@ def list_students():
     ]
     return jsonify({"students": students})
 
-#  Seed Teacher 
+# Seed Teacher
 def seed_teacher():
-    conn = sqlite3.connect("attendance.db")
+    conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute("INSERT OR IGNORE INTO teachers (username, password) VALUES (?, ?)", ("teacher1", "1234"))
     conn.commit()
     conn.close()
 
-#  Main 
+# Main 
 if __name__ == "__main__":
+    os.makedirs(DATA_DIR, exist_ok=True)
     init_db()
     seed_teacher()
-    port = int(os.environ.get("PORT", 5000))  # Get PORT from Render
+    port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
