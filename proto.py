@@ -2,8 +2,11 @@ from flask import Flask, request, jsonify
 import sqlite3
 import os
 import requests
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)  
+
 
 # Folder for saving student images
 IMAGE_FOLDER = "student_images"
