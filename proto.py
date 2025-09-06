@@ -9,7 +9,8 @@ app = Flask(__name__)
 IMAGE_FOLDER = "student_images"
 os.makedirs(IMAGE_FOLDER, exist_ok=True)
 
-# ---------------- Database Setup ---------------- #
+#  Database Setup 
+
 def init_db():
     conn = sqlite3.connect("attendance.db")
     c = conn.cursor()
@@ -37,7 +38,8 @@ def init_db():
     conn.close()
 
 
-# ---------------- Teacher Verification ---------------- #
+#  Teacher Verification 
+
 def verify_teacher(username, password):
     conn = sqlite3.connect("attendance.db")
     c = conn.cursor()
@@ -47,7 +49,7 @@ def verify_teacher(username, password):
     return result[0] if result else None
 
 
-# ---------------- Routes ---------------- #
+#  Routes
 
 # Student Registration (with image storage)
 @app.route("/student/register", methods=["POST"])
