@@ -3,3 +3,7 @@ requests
 gunicorn
 flask-cors
 
+flask
+flask-cors
+gunicorn
+requests
