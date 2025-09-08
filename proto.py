@@ -113,19 +113,39 @@ def register_student():
         return jsonify({"success": False, "error": str(e), "trace": traceback.format_exc()}), 500
 
 # Teacher Login
-@app.route("/teacher/login", methods=["POST"])
+@@app.route("/teacher/login", methods=["POST"])
 def teacher_login():
     try:
-        username = request.form.get("username")
-        password = request.form.get("password")
+        # Try JSON first
+        data = request.get_json(silent=True)
+
+        if data:  # if frontend sends JSON
+            username = data.get("username")
+            password = data.get("password")
+        else:  # fallback to form-data
+            username = request.form.get("username")
+            password = request.form.get("password")
+
+        if not username or not password:
+            return jsonify({"success": False, "error": "Missing username or password"}), 400
 
         teacher_id = verify_teacher(username, password)
         if not teacher_id:
             return jsonify({"success": False, "error": "Invalid credentials"}), 401
 
-        return jsonify({"success": True, "message": "Login successful", "teacher_id": teacher_id})
+        return jsonify({
+            "success": True,
+            "message": "Login successful",
+            "teacher_id": teacher_id
+        })
+
     except Exception as e:
-        return jsonify({"success": False, "error": str(e), "trace": traceback.format_exc()}), 500
+        import traceback
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "trace": traceback.format_exc()
+        }), 500
 
 # Mark Attendance
 @app.route("/teacher/attendance", methods=["POST"])
