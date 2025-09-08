@@ -113,7 +113,7 @@ def register_student():
         return jsonify({"success": False, "error": str(e), "trace": traceback.format_exc()}), 500
 
 # Teacher Login
-@@app.route("/teacher/login", methods=["POST"])
+@app.route("/teacher/login", methods=["POST"])
 def teacher_login():
     try:
         # Try JSON first
